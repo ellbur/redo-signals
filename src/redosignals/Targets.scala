@@ -38,9 +38,12 @@ class Source[A](init: A) extends Target[A] {
   def update(next: A) {
     if (! (next eq current))
       changed.fire(next)
-    current = next
-    val toUpdate = listeners.toSeq
-    listeners.clear()
+    val toUpdate = synchronized {
+      current = next
+      val t = listeners.toSeq
+      listeners.clear()
+      t
+    }
     val followUps = toUpdate map (_())
     followUps foreach (_())
   }
@@ -52,89 +55,65 @@ class Source[A](init: A) extends Target[A] {
   }
 }
 
-class Pairing[A,B](sigA: Target[A], sigB: Target[B]) extends Target[(A, B)] {
-  private var current: Option[(A, B)] = None
+trait ComputedTarget[A] extends Target[A] {
+  private var current: Option[A] = None
   private var listeners = mutable.ListBuffer[() => () => Unit]()
-  def rely(changed: () => () => Unit): (A, B) = {
-    listeners += changed
-    current match {
+
+  protected def compute(): A
+
+  def rely(changed: () => () => Unit): A = {
+    val it = synchronized {
+      listeners += changed
+      current
+    }
+    it match {
       case Some(x) => x
       case None =>
-        val a = sigA.rely(upset _)
-        val b = sigB.rely(upset _)
-        current = Some((a, b))
-        (a, b)
+        val computed = compute()
+        synchronized {
+          current = Some(computed)
+        }
+        computed
     }
   }
-  private def upset(): () => Unit = {
-    if (current != None) {
-      current = None
-      val toUpdate = listeners.toSeq
-      listeners.clear()
-      val followUps = toUpdate map (_())
+
+  protected def upset(): () => Unit = {
+    val toNotify = synchronized {
+      if (current.isDefined) {
+        current = None
+        val t = listeners.toSeq
+        listeners.clear()
+        Some(t)
+      }
+      else None
+    }
+    toNotify match {
+      case None => { () => () }
+      case Some(toUpdate) =>
+        val followUps = toUpdate map (_())
 
       { () =>
         followUps foreach (_())
       }
     }
-    else { () => () }
   }
 }
 
-class Mapping[A,B](sig: Target[A], f: A => B) extends Target[B] {
-  private var current: Option[B] = None
-  private var listeners = mutable.ListBuffer[() => () => Unit]()
+class Pairing[A,B](sigA: Target[A], sigB: Target[B]) extends ComputedTarget[(A, B)] {
+  def compute() =
+    (sigA.rely(upset _), sigB.rely(upset _))
+}
 
-  def rely(changed: () => () => Unit) = {
-    listeners += changed
-    current match {
-      case Some(x) => x
-      case None =>
-        val x = f(sig.rely(upset _))
-        current = Some(x)
-        x
-    }
-  }
-  private def upset(): () => Unit = {
-    if (current != None) {
-      current = None
-      val toUpdate = listeners.toSeq
-      listeners.clear()
-      val followUps = toUpdate map (_())
-
-      { () =>
-        followUps foreach (_())
-      }
-    }
-    else { () => () }
-  }
+class Mapping[A,B](sig: Target[A], f: A => B) extends ComputedTarget[B] {
+  def compute() =
+    f(sig.rely(upset _))
 }
 
 class Pure[A](a: A) extends Target[A] {
   def rely(f: () => () => Unit) = a
 }
 
-class Switch[A](sig: Target[Target[A]]) extends Target[A] {
-  private var current: Option[A] = None
-  private var listeners = mutable.ListBuffer[() => () => Unit]()
-  def rely(changed: () => () => Unit): A = {
-    listeners += changed
-    current match {
-      case Some(x) => x
-      case None =>
-        val x = sig.rely(upset).rely(upset)
-        current = Some(x)
-        x
-    }
-  }
-  private def upset(): () => Unit = {
-    current = None
-    val toUpdate = listeners.toSeq
-    listeners.clear()
-    val followUps = toUpdate map (_())
-
-    { () =>
-      followUps foreach (_())
-    }
-  }
+class Switch[A](sig: Target[Target[A]]) extends ComputedTarget[A] {
+  def compute() =
+    sig.rely(upset _).rely(upset _)
 }
