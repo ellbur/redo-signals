@@ -18,8 +18,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: cc.co.scala-reactive:reactive-core_2.10:0.3.0" level="project" />
-    <orderEntry type="library" name="Maven: org.scala-lang:scala-actors:2.10.0" level="project" />
     <orderEntry type="library" name="Maven: org.scalaz:scalaz-core_2.10:6.0.4" level="project" />
     <orderEntry type="library" name="Maven: org.scala-lang:scala-library:2.10.1" level="project" />
     <orderEntry type="library" name="Maven: cc.co.scala-reactive:reactive-core_2.10:0.3.0" level="project" />

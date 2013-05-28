@@ -13,7 +13,8 @@ scalaSource in Compile <<= baseDirectory(_ / "src")
 publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 
 libraryDependencies ++= Seq(
-    "org.scalaz" %% "scalaz-core" % "6.0.4"
+    "org.scalaz" %% "scalaz-core" % "6.0.4",
+    "cc.co.scala-reactive" %% "reactive-core" % "0.3.0"
 )
 
 
