@@ -20,4 +20,41 @@ trait Utils { self: RedoSignals.type =>
     }
     go()
   }
+
+  def tracking[A](f: Tracker => A): Target[A] = new TargetTracker[A](f)
+
+  def trackingRepeat(f: Tracker => Unit)(implicit obs: Observing) {
+    obs.observe(f)
+    trackingRepeatWeak(WeakReference(f))
+  }
+
+  def trackingRepeatWeak(f: WeakReference[Tracker => Unit]) {
+    object tracker extends ActingTracker {
+      def run() {
+        f.get foreach (_(tracker))
+      }
+    }
+    tracker.run()
+  }
+
+  def trackingFor(update: => Unit)(f: Tracker => Unit)(implicit obs: Observing) {
+    val updater = () => update
+    obs.observe(updater)
+    trackingForWeak(WeakReference(updater))(f)
+  }
+
+  def trackingForWeak(updater: WeakReference[() => Unit])(f: Tracker => Unit) {
+    object tracker extends ActingTracker {
+      def run() {
+        updater.get foreach (_())
+      }
+    }
+    f(tracker)
+  }
+
+  def delayingUpdates(f: UpdateSink => Unit) {
+    val sink = new UpdateSink
+    f(sink)
+    sink()
+  }
 }
