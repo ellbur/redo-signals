@@ -4,7 +4,6 @@ package redosignals
 import scala.collection.mutable
 import reactive.EventSource
 import scala.collection.mutable.ArrayBuffer
-import scalaz.{Name, Need}
 
 trait Target[+A] {
   def track(implicit tracker: Tracker): A = tracker.track(this)
@@ -75,14 +74,14 @@ class Observing {
   implicit val redoObserving = this
 }
 
-class Source[A](init: => A) extends Target[A] {
-  private var current: Name[A] = Need(init)
+class Source[A](init: A) extends Target[A] {
+  private var current: A = init
   private val listeners = mutable.ListBuffer[() => () => Unit]()
   def update(next: A) {
-    if (! (next == current.value))
+    if (! (next == current))
       changed.fire(next)
     val toUpdate = synchronized {
-      current = Need(next)
+      current = next
       val t = listeners.toSeq
       listeners.clear()
       t
@@ -91,10 +90,10 @@ class Source[A](init: => A) extends Target[A] {
     followUps foreach (_())
   }
   def <<=(next: A)(implicit sink: UpdateSink) {
-    if (! (next == current.value))
+    if (! (next == current))
       changed.fire(next)
     val toUpdate = synchronized {
-      current = Need(next)
+      current = next
       val t = listeners.toSeq
       listeners.clear()
       t
@@ -110,7 +109,7 @@ class Source[A](init: => A) extends Target[A] {
 
   def rely(changed: () => (() => Unit)) = {
     listeners += changed
-    current.value
+    current
   }
 }
 

@@ -4,15 +4,24 @@ package redosignals
 import scala.ref.WeakReference
 
 trait Utils { self: RedoSignals.type =>
+  implicit class Constant[A](a: A) {
+    def constant: Target[A] = new Pure[A](a)
+  }
+  
   def loopOn[A](sig: Target[A])(f: A => Unit)(implicit obs: Observing) {
     obs.observe(f)
     loopOnWeak(sig)(WeakReference(f))
   }
 
   def loopOnWeak[A](sig: Target[A])(f: WeakReference[A => Unit]) {
+    var current: Option[A] = None
     def go() {
       f.get foreach { f =>
-        f(sig.rely(changed))
+        val next = sig.rely(changed)
+        if (!current.exists(_ == next)) {
+          current = Some(next)
+          f(next)
+        }
       }
     }
     lazy val changed = () => () => {

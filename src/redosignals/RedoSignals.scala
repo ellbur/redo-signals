@@ -1,5 +1,5 @@
 
 package redosignals
 
-object RedoSignals extends ScalazSupport with Utils
+object RedoSignals extends Utils with SwingBridge
 
