@@ -28,9 +28,5 @@ libraryDependencies ++= Seq(
   "com.github.ellbur" % "dependent-map_2.11" % "2.0-SNAPSHOT"
 )
 
-//libraryDependencies ++= Seq(
-//  "com.intellij" % "forms_rt" % "7.0.3" % "test"
-//)
-
 resolvers += "Local Maven Repository" at file(Path.userHome.absolutePath + "/.m2/repository").toURL.toString
 
