@@ -5,7 +5,7 @@ name := "redo-signals"
 
 version := "0.8-SNAPSHOT"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.6"
 
 scalaSource in Compile <<= baseDirectory(_ / "src")
 
@@ -29,4 +29,6 @@ libraryDependencies ++= Seq(
 )
 
 resolvers += "Local Maven Repository" at file(Path.userHome.absolutePath + "/.m2/repository").toURL.toString
+
+enablePlugins(ScalaJSPlugin)
 
