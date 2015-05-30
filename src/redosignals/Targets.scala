@@ -231,6 +231,16 @@ trait BiTarget[A] extends Target[A] with CoTarget[A] { self =>
     update(num.plus(r, num.one))
     r
   }
+
+  def joinTo(other: BiTarget[A]): Unit = {
+    other() = self.now
+    self.zipWithStaleness.foreach {
+      case (a, b) => if (a != b) other() = b
+    } (other.redoObserving)
+    other.zipWithStaleness.foreach {
+      case (a, b) => if (a != b) self() = b
+    } (self.redoObserving)
+  }
 }
 
 class Source[A](init: A) extends BiTarget[A] {
