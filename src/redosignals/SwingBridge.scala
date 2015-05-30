@@ -195,8 +195,14 @@ trait SwingBridge { self: RedoSignals.type =>
     type I = Z
     override val comboBox: JComboBox[I] = _comboBox
   })
+
+  private val comboBoxIndex = new EventBasedGrabber[JComboBox[_],Int](_.getSelectedIndex)(_.setSelectedIndex(_))((c,l) => c.addItemListener(new ItemListener {
+    override def itemStateChanged(e: ItemEvent) { l() }
+  }))
+
   implicit class ComboBoxTargets[T](comboBox: JComboBox[T]) {
     def selectedItem = comboBoxSelectedItem(comboBox)
+    def selectedIndex = comboBoxIndex(comboBox)
   }
 
   def alwaysChanging[T](target: Target[T]): reactive.EventStream[T] = {
