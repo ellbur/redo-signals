@@ -20,6 +20,12 @@ trait Target[+A] extends TargetMutability.TargetLike[A] {
   def zip[B](other: Target[B]): Target[(A, B)] =
     new Pairing[A, B](this, other)
 
+  def unzip[X, Y](implicit pf: A <:< (X, Y)): (Target[X], Target[Y]) =
+    (
+      this map (a => pf(a)._1),
+      this map (a => pf(a)._2)
+    )
+
   def map[B](f: A => B): Target[B] =
     new Mapping[A, B](this, f)
 
