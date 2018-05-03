@@ -6,9 +6,15 @@ import javax.swing.SwingUtilities
 import scala.ref.WeakReference
 
 trait Utils { self: RedoSignals.type =>
-  implicit class SetLike[A](f: A => Unit) {
+  implicit class SetLike[-A](f: A => Any) {
     def like(as: Target[A])(implicit obs: Observing): Unit =
-      as foreach f
+      as foreach (x => f(x))
+  }
+
+  // Has trouble with type inference. Weird.
+  implicit class SetTo[+A](t: Target[A]) {
+    def ->(sink: A => Any)(implicit obs: Observing): Unit =
+      t foreach (x => sink(x))
   }
   
   def loopOn[A](sig: Target[A])(f: A => Unit)(implicit obs: Observing) {
