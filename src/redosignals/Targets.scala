@@ -248,7 +248,7 @@ class Source[A](init: A) extends BiTarget[A] {
   private val listeners = mutable.ListBuffer[() => () => Unit]()
 
   def delayedUpdate(next: A): () => Unit = {
-    if (!(next == current))
+    if (!synchronized(next == current))
       changed.fire(next)
     val toUpdate = synchronized {
       current = next
@@ -266,8 +266,10 @@ class Source[A](init: A) extends BiTarget[A] {
   val changed = new reactive.EventSource[A]
 
   def rely(changed: () => (() => Unit)) = {
-    listeners += changed
-    current
+    synchronized {
+      listeners += changed
+      current
+    }
   }
 
   override def now: A = current
